@@ -5,9 +5,12 @@ import Sidebar from "./components/Sidebar";
 import TodoForm from "./components/TodoForm";
 import TodoItem from "./components/TodoItem";
 
+const TODOS_PER_PAGE = 7;
+
 function App() {
   const [todos, setTodos] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -54,13 +57,28 @@ function App() {
     });
 
   const filteredTodos = todos.filter(FILTERS[filter].test);
+  const totalPages = Math.max(1, Math.ceil(filteredTodos.length / TODOS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const visibleTodos = filteredTodos.slice(
+    (currentPage - 1) * TODOS_PER_PAGE,
+    currentPage * TODOS_PER_PAGE
+  );
+
+  const changeFilter = (nextFilter) => {
+    setFilter(nextFilter);
+    setPage(1);
+  };
+
+  const changePage = (nextPage) => {
+    setPage(Math.max(1, Math.min(nextPage, totalPages)));
+  };
 
   return (
     <div className="layout">
       <Sidebar
         todos={todos}
         filter={filter}
-        onFilter={setFilter}
+        onFilter={changeFilter}
         onClearDone={handleClearDone}
       />
 
@@ -96,7 +114,7 @@ function App() {
           </div>
         ) : (
           <ul className="todo-list">
-            {filteredTodos.map((todo) => (
+            {visibleTodos.map((todo) => (
               <TodoItem
                 key={todo._id}
                 todo={todo}
@@ -105,6 +123,51 @@ function App() {
               />
             ))}
           </ul>
+        )}
+
+        {totalPages > 1 && (
+          <nav className="pagination" aria-label="Todo pages">
+            <button
+              onClick={() => changePage(1)}
+              disabled={currentPage === 1}
+              aria-label="First page"
+            >
+              &lt;&lt;
+            </button>
+            <button
+              onClick={() => changePage(currentPage - 1)}
+              disabled={currentPage === 1}
+              aria-label="Previous page"
+            >
+              &lt;
+            </button>
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+              (pageNumber) => (
+                <button
+                  key={pageNumber}
+                  className={pageNumber === currentPage ? "active" : ""}
+                  onClick={() => changePage(pageNumber)}
+                  aria-current={pageNumber === currentPage ? "page" : undefined}
+                >
+                  {pageNumber}
+                </button>
+              )
+            )}
+            <button
+              onClick={() => changePage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              aria-label="Next page"
+            >
+              &gt;
+            </button>
+            <button
+              onClick={() => changePage(totalPages)}
+              disabled={currentPage === totalPages}
+              aria-label="Last page"
+            >
+              &gt;&gt;
+            </button>
+          </nav>
         )}
       </main>
     </div>
